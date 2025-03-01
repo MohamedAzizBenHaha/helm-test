@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-zookeeper
+  name: zookeeper
 spec:
   replicas: 1
   selector:
@@ -14,14 +14,14 @@ spec:
     spec:
       containers:
         - name: zookeeper
-          image: "{{ .Values.zookeeper.image }}:{{ .Values.zookeeper.tag }}"
+          image: confluentinc/cp-zookeeper:latest
           ports:
-            - containerPort: {{ .Values.zookeeper.port }}
+            - containerPort: 2181
             - containerPort: 2888
             - containerPort: 3888
           env:
             - name: ZOOKEEPER_CLIENT_PORT
-              value: "{{ .Values.zookeeper.port }}"
+              value: "2181"
             - name: ZOOKEEPER_TICK_TIME
               value: "2000"
 
@@ -29,7 +29,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-kafka
+  name: kafka
 spec:
   replicas: 1
   selector:
@@ -42,29 +42,29 @@ spec:
     spec:
       containers:
         - name: kafka
-          image: "{{ .Values.kafka.image }}:{{ .Values.kafka.tag }}"
+          image: confluentinc/cp-kafka:latest
           ports:
             - containerPort: 9092
             - containerPort: 29092
           env:
             - name: KAFKA_BROKER_ID
-              value: "{{ .Values.kafka.brokerId }}"
+              value: "1"
             - name: KAFKA_ZOOKEEPER_CONNECT
-              value: "{{ .Values.kafka.zookeeperConnect }}"
+              value: "zookeeper:2181"
             - name: KAFKA_ADVERTISED_LISTENERS
-              value: "{{ .Values.kafka.advertisedListeners }}"
+              value: "PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092"
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
-              value: "{{ .Values.kafka.listenerSecurityProtocolMap }}"
+              value: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
             - name: KAFKA_INTER_BROKER_LISTENER_NAME
-              value: "{{ .Values.kafka.interBrokerListenerName }}"
+              value: "PLAINTEXT"
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-              value: "{{ .Values.kafka.offsetsTopicReplicationFactor }}"
+              value: "1"
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-mongodb
+  name: mongodb
 spec:
   replicas: 1
   selector:
@@ -77,22 +77,22 @@ spec:
     spec:
       containers:
         - name: mongodb
-          image: "{{ .Values.mongodb.image }}:{{ .Values.mongodb.tag }}"
+          image: mongo:4.4
           ports:
-            - containerPort: {{ .Values.mongodb.port }}
+            - containerPort: 27017
           volumeMounts:
             - name: mongodb-data
-              mountPath: "{{ .Values.mongodb.volumeMount.containerPath }}"
+              mountPath: "/data/db"
       volumes:
         - name: mongodb-data
           hostPath:
-            path: "{{ .Values.mongodb.volumeMount.hostPath }}"
+            path: "/path/to/local/folder1"
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-flask-app
+  name: flask-app
 spec:
   replicas: 1
   selector:
@@ -105,15 +105,15 @@ spec:
     spec:
       containers:
         - name: flask-app
-          image: "{{ .Values.flaskApp.image }}:{{ .Values.flaskApp.tag }}"
+          image: custom/flask-app:latest
           ports:
-            - containerPort: {{ .Values.flaskApp.port }}
+            - containerPort: 5000
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-consumer
+  name: consumer
 spec:
   replicas: 1
   selector:
@@ -126,7 +126,7 @@ spec:
     spec:
       containers:
         - name: consumer
-          image: "{{ .Values.consumer.image }}:{{ .Values.consumer.tag }}"
+          image: custom/consumer:latest
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "kafka:9092"
@@ -135,7 +135,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-producer
+  name: producer
 spec:
   replicas: 1
   selector:
@@ -148,7 +148,7 @@ spec:
     spec:
       containers:
         - name: producer
-          image: "{{ .Values.producer.image }}:{{ .Values.producer.tag }}"
+          image: custom/producer:latest
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "kafka:9092"
