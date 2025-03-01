@@ -1,5 +1,5 @@
 apiVersion: v2
-name: phd-bigdata
+name: helm-test
 description: A Helm chart for deploying a big data pipeline with Kafka, Zookeeper, MongoDB, Flask app, producer, and consumer.
 type: application
 version: 1.0.0
