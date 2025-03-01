@@ -5,8 +5,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.zookeeper.port }}
-      targetPort: {{ .Values.zookeeper.port }}
+    - port: 2181
+      targetPort: 2181
       name: client
     - port: 2888
       targetPort: 2888
@@ -42,8 +42,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.mongodb.port }}
-      targetPort: {{ .Values.mongodb.port }}
+    - port: 27017
+      targetPort: 27017
       name: db
   selector:
     app: mongodb
@@ -57,7 +57,7 @@ spec:
   type: LoadBalancer
   ports:
     - port: 80
-      targetPort: {{ .Values.flaskApp.port }}
+      targetPort: 5000
       name: http
   selector:
     app: flask-app
