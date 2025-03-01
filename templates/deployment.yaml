@@ -1,0 +1,160 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-zookeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: "{{ .Values.zookeeper.image }}:{{ .Values.zookeeper.tag }}"
+          ports:
+            - containerPort: {{ .Values.zookeeper.port }}
+            - containerPort: 2888
+            - containerPort: 3888
+          env:
+            - name: ZOOKEEPER_CLIENT_PORT
+              value: "{{ .Values.zookeeper.port }}"
+            - name: ZOOKEEPER_TICK_TIME
+              value: "2000"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: "{{ .Values.kafka.image }}:{{ .Values.kafka.tag }}"
+          ports:
+            - containerPort: 9092
+            - containerPort: 29092
+          env:
+            - name: KAFKA_BROKER_ID
+              value: "{{ .Values.kafka.brokerId }}"
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              value: "{{ .Values.kafka.zookeeperConnect }}"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "{{ .Values.kafka.advertisedListeners }}"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "{{ .Values.kafka.listenerSecurityProtocolMap }}"
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: "{{ .Values.kafka.interBrokerListenerName }}"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "{{ .Values.kafka.offsetsTopicReplicationFactor }}"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: "{{ .Values.mongodb.image }}:{{ .Values.mongodb.tag }}"
+          ports:
+            - containerPort: {{ .Values.mongodb.port }}
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: "{{ .Values.mongodb.volumeMount.containerPath }}"
+      volumes:
+        - name: mongodb-data
+          hostPath:
+            path: "{{ .Values.mongodb.volumeMount.hostPath }}"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-flask-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      containers:
+        - name: flask-app
+          image: "{{ .Values.flaskApp.image }}:{{ .Values.flaskApp.tag }}"
+          ports:
+            - containerPort: {{ .Values.flaskApp.port }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consumer
+  template:
+    metadata:
+      labels:
+        app: consumer
+    spec:
+      containers:
+        - name: consumer
+          image: "{{ .Values.consumer.image }}:{{ .Values.consumer.tag }}"
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: producer
+  template:
+    metadata:
+      labels:
+        app: producer
+    spec:
+      containers:
+        - name: producer
+          image: "{{ .Values.producer.image }}:{{ .Values.producer.tag }}"
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+            - name: MONGODB_URI
+              value: "mongodb://mongodb:27017/mydatabase"
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox
+          command: ['sh', '-c', 'until nslookup kafka && nslookup mongodb; do echo waiting for Kafka and MongoDB; sleep 2; done;']

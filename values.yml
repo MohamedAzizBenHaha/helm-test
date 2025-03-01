@@ -1,0 +1,47 @@
+# Zookeeper Configuration
+zookeeper:
+  image: confluentinc/cp-zookeeper
+  tag: latest
+  port: 2181
+
+# Kafka Configuration
+kafka:
+  image: confluentinc/cp-kafka
+  tag: latest
+  brokerId: 1
+  zookeeperConnect: "zookeeper:2181"
+  advertisedListeners: "PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092"
+  listenerSecurityProtocolMap: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+  interBrokerListenerName: "PLAINTEXT"
+  offsetsTopicReplicationFactor: 1
+
+# MongoDB Configuration
+mongodb:
+  image: mongo
+  tag: 4.4
+  port: 27017
+  volumeMount:
+    hostPath: /path/to/local/folder1
+    containerPath: /data/db
+
+# Flask App Configuration
+flaskApp:
+  image: custom/flask-app
+  tag: latest
+  port: 5000
+  buildContext: ./appli
+
+# Consumer Script Configuration
+consumer:
+  image: custom/consumer
+  tag: latest
+  buildContext: ./consommateur
+
+# Producer Script Configuration
+producer:
+  image: custom/producer
+  tag: latest
+  buildContext: ./producteur
+  dependsOn:
+    - kafka
+    - mongodb
